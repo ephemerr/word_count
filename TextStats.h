@@ -1,17 +1,19 @@
 #include <QString>
 
-#include <utility>
-#include <list>
-#include <map>
+#include <QPair>
+#include <QList>
+#include <QHash>
+
 
 class TextStats {
-    typedef std::pair<const QString,int>  word_stat_t;
-    std::list<word_stat_t> top;
-    std::map<QString, int> rest;
+    typedef QPair<QString,int>  word_stat_t;
+    QList<word_stat_t> top;
+    QHash<QString, int> rest;
 
 public:
     void updateFromString(const QString& text);
     void updateFromFile(const QString& filename);
     void printTop();
+    const int TOP_SIZE = 15;
 };
 

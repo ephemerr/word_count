@@ -7,68 +7,73 @@
 
 #include <fstream>
 #include <iostream>
-#include <algorithm>
+#include <QtAlgorithms>
 #include <chrono>
 #include <locale>
 
 void TextStats::updateFromString(const QString& token)
 {
-    auto found_in_top = top.end();
-    for ( auto i = top.begin(); i != top.end(); i++ )
+    int found_in_top = -1;
+    for ( int i = 0; i < top.size(); i++ )
     {
-        if (found_in_top == top.end())
+        auto &item = top[i];
+
+        if (found_in_top == -1)
         {
-            if (i->first == token)
+            if (item.first == token)
             {
-                i->second++;
+                item.second++;
                 found_in_top = i;
-                top.sort([](auto &x, auto &y)
-                {
-                    return x.second < y.second;
-                });
-                break;
             }
         }
-        // else if ( i->second >= found_in_top->second)
-        // {
-        //     top.splice(i.base(), top, (++found_in_top).base());
-        //     break;
-        // }
+        else
+        {
+            if (top[i].second < top[found_in_top].second)
+            {
+                top.swapItemsAt(i, found_in_top);
+                found_in_top = i;
+            }
+        }
 
     }
-    if (found_in_top == top.end())
+    if (found_in_top == -1)
     {
         word_stat_t new_stat = {token, 1};
-        if (top.size() < 15)
+        if (top.size() < TOP_SIZE)
         {
             top.push_front(new_stat);
         }
         else
         {
-            // value not present in top 15 then search it among the rest
+            // value not present in top then search it among the rest
             auto found = rest.find(new_stat.first);
             if (found != rest.end())
             {
                 // if value found among the rest we should increment it and check if it should be placed to top
-                new_stat.second = ++found->second;
-                if (new_stat.second > top.begin()->second)
+                new_stat.second = ++(found.value());
+                if (new_stat.second > top[0].second)
                 {
-                    auto i = top.begin();
-                    for(; i != top.end(); i++)
+                    auto i = 0;
+                    for(; i < TOP_SIZE; i++)
                     {
-                        // find value in the top that would be less than updatet value
-                        if (i->second > new_stat.second)
+                        // find value in the top that would be less than updated value
+                        if (new_stat.second < top[i].second)
                         {
+                            qDebug() <<  QString("insert %1 %2 instead of: %3 %4 i: %5 ")
+                                .arg(new_stat.first)
+                                .arg(new_stat.second)
+                                .arg(top[0].first)
+                                .arg(top[0].second)
+                                .arg(i);
                             top.insert(i, new_stat);
                             break;
                         }
                     }
-                    if (i == top.end())
+                    if (i == TOP_SIZE)
                     {
                         top.push_back(new_stat);
                     }
-                    auto drop_stat = *top.begin();
-                    rest.insert(rest.begin(), drop_stat);
+                    rest[top[0].first] = top[0].second;
                     top.pop_front();
                     rest.erase(found);
                 }
@@ -80,7 +85,7 @@ void TextStats::updateFromString(const QString& token)
             }
             else
             {
-                rest.insert(rest.begin(), new_stat);
+                rest[new_stat.first] = new_stat.second;
             }
         }
     }
