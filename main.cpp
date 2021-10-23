@@ -1,11 +1,13 @@
 // #include <QGuiApplication>
 // #include <QQmlApplicationEngine>
 
+#include "TextStats.h"
+
 #include <string>
+#include <utility>
+#include <list>
 #include <fstream>
 #include <iostream>
-#include <utility>
-#include <vector>
 #include <algorithm>
 #include <chrono>
 
@@ -16,6 +18,7 @@
 #include <boost/bimap/multiset_of.hpp>
 #include <boost/bimap/list_of.hpp>
 #include <boost/bimap/detail/concept_tags.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace boost::bimaps;
 
@@ -34,7 +37,7 @@ typedef bimap
     ,unordered_set_of< std::string >
 > word_counter;
 
-std::string text=
+std::string text_=
     "Relations between data in the STL are represented with maps."
     "A map is a directed relation, by using it you are representing "
     "a mapping. In this directed relation, the first type is related to "
@@ -45,7 +48,7 @@ std::string text=
 typedef boost::tokenizer<boost::char_separator<char> > text_tokenizer;
 
 auto timeFuncInvocation =
-    [](auto&& func, auto&&... params) {
+    [](const auto&& func, auto&&... params) {
         // get time before function invocation
         const auto& start = std::chrono::high_resolution_clock::now();
         // function invocation using perfect forwarding
@@ -61,8 +64,8 @@ void vector_counter(const std::string& filename)
     file.width(64*1024);
     std::string text;
 
-    typedef std::pair<std::string, int> word_stat;
-    std::vector<word_stat> simple_counter;
+    typedef std::pair<std::string, int> word_stat_t;
+    std::vector<word_stat_t> simple_counter;
 
     while (file >> text)
     {
@@ -93,7 +96,7 @@ void vector_counter(const std::string& filename)
             }
             else
             {
-                simple_counter.push_back(word_stat(*it,1));
+                simple_counter.push_back(word_stat_t(*it,1));
             }
         }
     }
@@ -103,6 +106,7 @@ void vector_counter(const std::string& filename)
         auto &elem = simple_counter[i];
         std::cout << elem.first << ": " << elem.second << std::endl;
     }
+    std::cout << "unique words: " << simple_counter.size() << std::endl;
 }
 
 void vemap_counter(const std::string &filename)
@@ -111,19 +115,14 @@ void vemap_counter(const std::string &filename)
     file.width(64*1024);
     std::string text;
 
-    typedef std::pair<std::string,int>  word_stat;
-    std::list<word_stat> top;
-    std::map<std::string, int> counter;
-    struct word_stat_comp
-    {
-        bool operator()(word_stat const& lhs, word_stat const& rhs)
-        {
-            return lhs.second < rhs.second;
-        }
-    };
+    typedef std::pair<std::string,int>  word_stat_t;
+    std::list<word_stat_t> top;
+    std::map<std::string, int> rest;
 
     while (file >> text)
     {
+        boost::algorithm::to_lower(text);
+
         text_tokenizer tok(text,boost::char_separator<char>(" \t\n.,;:!?(){}[]?'\""));
 
         for( auto it = tok.begin(), it_end = tok.end(); it != it_end ; ++it )
@@ -137,26 +136,26 @@ void vemap_counter(const std::string &filename)
                     {
                         i->second++;
                         found_in_top = i;
-                        // top.sort([](auto &x, auto &y)
-                        // {
-                        //     return x.second > y.second;
-                        // });
-                        // break;
+                        top.sort([](auto &x, auto &y)
+                        {
+                            return x.second > y.second;
+                        });
+                        break;
                     }
                 }
-                else if ( i->second >= found_in_top->second)
-                {
-                    top.splice(i.base(), top, (++found_in_top).base());
-                    break;
-                }
+                // else if ( i->second >= found_in_top->second)
+                // {
+                //     top.splice(i.base(), top, (++found_in_top).base());
+                //     break;
+                // }
 
             }
             if (found_in_top == top.rend())
             {
                 // value not present in top 15 then search it among the rest
-                word_stat new_stat = {*it, 1};
-                auto found = counter.find(*it);
-                if (found != end(counter))
+                word_stat_t new_stat = {*it, 1};
+                auto found = rest.find(*it);
+                if (found != rest.end())
                 {
                     // if value found among the rest we should increment it and check if it should be placed to top
                     new_stat.second = found->second + 1;
@@ -177,24 +176,24 @@ void vemap_counter(const std::string &filename)
                         {
                             top.insert(i.base(), new_stat);
                         }
-                        counter.erase(found);
+                        rest.erase(found);
                         if (top.size() > 15)
                         {
                             // pop last value from the top to the rest
                             auto drop_stat = *top.rbegin();
                             top.pop_back();
-                            counter.insert(begin(counter), drop_stat);
+                            rest.insert(begin(rest), drop_stat);
                         }
                     }
                     else if (top.size() < 15)
                     {
                         top.push_back(new_stat);
-                        counter.erase(found);
+                        rest.erase(found);
                     }
                 }
                 else
                 {
-                    counter.insert(begin(counter), new_stat);
+                    rest.insert(begin(rest), new_stat);
                 }
             }
         }
@@ -255,6 +254,13 @@ void vemap_counter(const std::string &filename)
 //     return 0;
 // }
 
+void stats_counter(const QString& filename)
+{
+    TextStats stats;
+    stats.updateFromFile(filename);
+    stats.printTop();
+}
+
 int main(int argc, char *argv[])
 {
 // #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -274,10 +280,10 @@ int main(int argc, char *argv[])
 
     // feed the text into the container
 
-    std::chrono::duration<double, std::milli> du0 = timeFuncInvocation(vemap_counter, "file4.txt");
-    std::cout << std::endl << "result: " << du0.count() << std::endl;
-    std::chrono::duration<double, std::milli> du = timeFuncInvocation(vector_counter, "file4.txt");
+    std::chrono::duration<double, std::milli> du = timeFuncInvocation(stats_counter, "file4.txt");
     std::cout << std::endl << "result: " << du.count() << std::endl;
+    // std::chrono::duration<double, std::milli> du0 = timeFuncInvocation(vector_counter, "file4.txt");
+    // std::cout << std::endl << "result: " << du0.count() << std::endl;
 
 
     // list words with counters by order of appearance
