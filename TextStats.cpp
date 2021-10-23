@@ -5,12 +5,6 @@
 #include <QFile>
 #include <QRegExp>
 
-#include <fstream>
-#include <iostream>
-#include <QtAlgorithms>
-#include <chrono>
-#include <locale>
-
 void TextStats::updateFromString(const QString& token)
 {
     int found_in_top = -1;
@@ -20,6 +14,7 @@ void TextStats::updateFromString(const QString& token)
 
         if (found_in_top == -1)
         {
+            // search for token in list and increment it's counter
             if (item.first == token)
             {
                 item.second++;
@@ -28,6 +23,7 @@ void TextStats::updateFromString(const QString& token)
         }
         else
         {
+            // after incrementation bubble value up
             if (top[i].second < top[found_in_top].second)
             {
                 top.swapItemsAt(i, found_in_top);
@@ -56,35 +52,22 @@ void TextStats::updateFromString(const QString& token)
                     auto i = 0;
                     for(; i < TOP_SIZE; i++)
                     {
-                        // find value in the top that would be less than updated value
                         if (new_stat.second < top[i].second)
                         {
-                            qDebug() <<  QString("insert %1 %2 instead of: %3 %4 i: %5 ")
-                                .arg(new_stat.first)
-                                .arg(new_stat.second)
-                                .arg(top[0].first)
-                                .arg(top[0].second)
-                                .arg(i);
+                            // find value in the top that would be bigger than updated value and insert before it
                             top.insert(i, new_stat);
                             break;
                         }
                     }
-                    if (i == TOP_SIZE)
-                    {
-                        top.push_back(new_stat);
-                    }
+                    // save to map and remove dublicates
                     rest[top[0].first] = top[0].second;
                     top.pop_front();
                     rest.erase(found);
                 }
-                else
-                {
-                    // std::cout << "not push " << new_stat.first << " " << new_stat.second;
-                    // std::cout << " top first " << top.begin()->first << " " << top.begin()->second << std::endl;
-                }
             }
             else
             {
+                // save new value to map
                 rest[new_stat.first] = new_stat.second;
             }
         }
@@ -107,7 +90,7 @@ void TextStats::updateFromFile(const QString& filename)
 
 void TextStats::printTop()
 {
-    std::cout << "Print top" << std::endl;
+    qDebug() << "Print top";
     for (auto &elem : top)
     {
         qDebug() << elem.first << ": " << elem.second ;
