@@ -1,10 +1,11 @@
-// #include <QGuiApplication>
-// #include <QQmlApplicationEngine>
-
 #include "TextStats.h"
 
-#include <string>
-#include <iostream>
+#include <QGuiApplication>
+#include <QQmlApplicationEngine>
+#include <QThread>
+#include <QDebug>
+#include <QQmlContext>
+
 #include <chrono>
 
 auto timeFuncInvocation =
@@ -18,44 +19,37 @@ auto timeFuncInvocation =
         return stop - start;
      };
 
-void stats_counter(const QString& filename)
-{
-    TextStats stats;
-    stats.updateFromFile(filename);
-    stats.printTop();
-}
 
 int main(int argc, char *argv[])
 {
-// #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-//     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-// #endif
-//
-//     QGuiApplication app(argc, argv);
-//
-//     QQmlApplicationEngine engine;
-//     const QUrl url(QStringLiteral("qrc:/main.qml"));
-//     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-//                      &app, [url](QObject *obj, const QUrl &objUrl) {
-//         if (!obj && url == objUrl)
-//             QCoreApplication::exit(-1);
-//     }, Qt::QueuedConnection);
-//     engine.load(url);
+    QThread thread;
 
-    // feed the text into the container
+    TextStats stats;
 
-    std::chrono::duration<double, std::milli> du = timeFuncInvocation(stats_counter, "file4.txt");
-    std::cout << std::endl << "result: " << du.count() << std::endl;
+    stats.setFileName("file4.txt");
 
+    stats.moveToThread(&thread);
 
-    // list words with counters by order of appearance
-    // for( word_counter::right_const_iterator
-    //         wit = wc.right.begin(), wit_end = wc.right.end();
-    //
-    //      wit != wit_end; ++wit )
-    // {
-    //     std::cout << wit->second << ": " << wit->first << std::endl;
-    // }
+    QObject::connect(&thread, &QThread::started, &stats, &TextStats::start);
 
-    return 0;//app.exec();
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
+
+    QGuiApplication app(argc, argv);
+
+    QQmlApplicationEngine engine;
+    const QUrl url(QStringLiteral("qrc:/main.qml"));
+    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
+                     &app,
+    [url] (QObject *obj, const QUrl &objUrl) {
+        if (!obj && url == objUrl)
+            QCoreApplication::exit(-1);
+    }, Qt::QueuedConnection);
+    engine.rootContext()->setContextProperty("text_stats",&stats);
+    engine.load(url);
+
+    thread.start();
+
+    return app.exec();
 }

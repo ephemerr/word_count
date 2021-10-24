@@ -74,7 +74,7 @@ void TextStats::updateFromString(const QString& token)
     }
 }
 
-void TextStats::updateFromFile(const QString& filename)
+void TextStats::start()
 {
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -85,7 +85,11 @@ void TextStats::updateFromFile(const QString& filename)
     {
         updateFromString(text.toLower());
     }
+}
 
+void TextStats::setFileName(const QString& filename_)
+{
+    this->filename = filename_;
 }
 
 void TextStats::printTop()
@@ -96,4 +100,14 @@ void TextStats::printTop()
         qDebug() << elem.first << ": " << elem.second ;
     }
     qDebug() << "unique words: " << rest.size() + top.size();
+}
+
+const QString& TextStats::getFileName() const
+{
+    return filename;
+}
+
+void TextStats::onStatsRequested()
+{
+
 }
