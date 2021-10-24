@@ -9,11 +9,22 @@ Window {
     visible: true
     title: ""
 
-    Component.onCompleted: {
-        window.title = text_stats.getFileName()
+    signal updateRequested()
 
+    Text {
+        text: context_interface.percent
     }
 
+    Component.onCompleted: {
+    }
+
+
+    Connections {
+        target: context_interface
+
+        function onStatsUpdated() {
+        }
+    }
 
     // ChartView {
     //     title: "Bar series"

@@ -1,4 +1,5 @@
 #include "TextStats.h"
+#include "QmlContextInterface.h"
 
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
@@ -23,13 +24,9 @@ auto timeFuncInvocation =
 int main(int argc, char *argv[])
 {
     QThread thread;
-
     TextStats stats;
-
-    stats.setFileName("file4.txt");
-
+    stats.setFileName("file3.txt");
     stats.moveToThread(&thread);
-
     QObject::connect(&thread, &QThread::started, &stats, &TextStats::start);
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -41,13 +38,21 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-                     &app,
-    [url] (QObject *obj, const QUrl &objUrl) {
+                     &app, [url] (QObject *obj, const QUrl &objUrl)
+    {
         if (!obj && url == objUrl)
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
-    engine.rootContext()->setContextProperty("text_stats",&stats);
+
+    QmlContextInterface contextInterface;
+    engine.rootContext()->setContextProperty("context_interface",&contextInterface);
     engine.load(url);
+
+
+    qRegisterMetaType<TextStats::SortedResults>("SortedResults");
+
+    QObject::connect(&stats, &TextStats::statsUpdated,
+            &contextInterface, &QmlContextInterface::onStatsUpdate);
 
     thread.start();
 

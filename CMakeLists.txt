@@ -17,6 +17,7 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Quick REQUIRED)
 set(PROJECT_SOURCES
         main.cpp
         TextStats.cpp
+        QmlContextInterface.cpp
         qml.qrc
 )
 

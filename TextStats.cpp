@@ -3,7 +3,8 @@
 #include <QDebug>
 #include <QString>
 #include <QFile>
-#include <QRegExp>
+#include <QMutexLocker>
+#include <qdebug.h>
 
 void TextStats::updateFromString(const QString& token)
 {
@@ -76,15 +77,37 @@ void TextStats::updateFromString(const QString& token)
 
 void TextStats::start()
 {
+    readed = 0;
+
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        return;
-    QTextStream stream(&file);
-    QString text;
-    while ( !(stream >> text).atEnd() )
     {
-        updateFromString(text.toLower());
+        qWarning() << "Could not open file.";
+        return;
     }
+    QString text;
+    QByteArray chunk;
+    do {
+        try {
+            chunk = file.read( CHUNK_SIZE );
+            readed += chunk.size();
+        } catch( ... ) {
+            qWarning() << "Error reading file.";
+            return;
+        }
+        QTextStream stream(&chunk);
+        while ( !(stream >> text).atEnd() )
+        {
+            updateFromString(text.toLower());
+        }
+        for(auto &item : top)
+        {
+            results[item.first] = item.second;
+        }
+        int percent = (readed*100)/file.size();
+        emit statsUpdated(results, percent);
+    }
+    while( !chunk.isEmpty() );
 }
 
 void TextStats::setFileName(const QString& filename_)
@@ -102,12 +125,3 @@ void TextStats::printTop()
     qDebug() << "unique words: " << rest.size() + top.size();
 }
 
-const QString& TextStats::getFileName() const
-{
-    return filename;
-}
-
-void TextStats::onStatsRequested()
-{
-
-}
