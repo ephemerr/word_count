@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 {
     QThread thread;
     TextStats stats;
-    stats.setFileName("file4.txt");
+    stats.setFileName("file3.txt");
     stats.moveToThread(&thread);
     QObject::connect(&thread, &QThread::started, &stats, &TextStats::start);
 

@@ -77,6 +77,9 @@ void TextStats::updateFromString(const QString& token)
 
 void TextStats::start()
 {
+    top.clear();
+    rest.clear();
+
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -106,6 +109,7 @@ void TextStats::start()
         }
         int percent = (readed*100)/file.size();
         emit statsUpdated(results, percent);
+        qDebug() << readed << " " << file.size() << " " << percent;
     }
     while( !chunk.isEmpty() );
 }
