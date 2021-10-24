@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 {
     QThread thread;
     TextStats stats;
-    stats.setFileName("file3.txt");
+    stats.setFileName("file4.txt");
     stats.moveToThread(&thread);
     QObject::connect(&thread, &QThread::started, &stats, &TextStats::start);
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     engine.load(url);
 
 
-    qRegisterMetaType<TextStats::SortedResults>("SortedResults");
+    qRegisterMetaType<SortedResults>("SortedResults");
 
     QObject::connect(&stats, &TextStats::statsUpdated,
             &contextInterface, &QmlContextInterface::onStatsUpdate);

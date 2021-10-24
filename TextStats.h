@@ -1,3 +1,7 @@
+#pragma once
+
+#include "SortedResults.h"
+
 #include <QString>
 
 #include <QPair>
@@ -15,8 +19,6 @@ class TextStats : public QObject {
     static const int CHUNK_SIZE = 1024*1024;
 
 public:
-    typedef QMap<QString, int> SortedResults;
-
     TextStats(QObject *const parent = 0) {};
     ~TextStats() {};
 
@@ -31,10 +33,8 @@ signals:
 
 private:
     QString filename;
-    SortedResults results;
     typedef QPair<QString,int>  word_stat_t;
     QList<word_stat_t> top;
     QHash<QString, int> rest;
-    quint64 readed;
 };
 

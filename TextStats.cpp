@@ -77,8 +77,6 @@ void TextStats::updateFromString(const QString& token)
 
 void TextStats::start()
 {
-    readed = 0;
-
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -87,6 +85,7 @@ void TextStats::start()
     }
     QString text;
     QByteArray chunk;
+    quint64 readed = 0;
     do {
         try {
             chunk = file.read( CHUNK_SIZE );
@@ -100,6 +99,7 @@ void TextStats::start()
         {
             updateFromString(text.toLower());
         }
+        SortedResults results;
         for(auto &item : top)
         {
             results[item.first] = item.second;
