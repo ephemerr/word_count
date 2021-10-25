@@ -17,68 +17,39 @@ auto timeFuncInvocation =
 
 void TextStats::updateFromString(const QString& token)
 {
-    int found_in_top = -1;
-    for ( int i = 0; i < top.size(); i++ )
+    auto in_best = best.find(token);
+    if (in_best != best.end())
     {
-        auto &item = top[i];
-
-        if (found_in_top == -1)
-        {
-            // search for token in list and increment it's counter
-            if (item.first == token)
-            {
-                item.second++;
-                found_in_top = i;
-            }
-        }
-        else
-        {
-            // after incrementation bubble value up
-            if (top[i].second < top[found_in_top].second)
-            {
-                top.swapItemsAt(i, found_in_top);
-                found_in_top = i;
-            }
-        }
-
+        (*in_best)++;
     }
-    if (found_in_top == -1)
+    else
     {
-        word_stat_t new_stat = {token, 1};
-        if (top.size() < TOP_SIZE)
+        if (best.size() < 15)
         {
-            top.push_front(new_stat);
+            best[token] = 1;
         }
         else
         {
-            // value not present in top then search it among the rest
-            auto found = rest.find(new_stat.first);
-            if (found != rest.end())
+            auto in_rest = rest.find(token);
+            if (in_rest != rest.end())
             {
-                // if value found among the rest we should increment it and check if it should be placed to top
-                new_stat.second = ++(found.value());
-                if (new_stat.second > top[0].second)
-                {
-                    auto i = 0;
-                    for(; i < TOP_SIZE; i++)
-                    {
-                        if (new_stat.second < top[i].second)
-                        {
-                            // find value in the top that would be bigger than updated value and insert before it
-                            top.insert(i, new_stat);
-                            break;
-                        }
+                (*in_rest)++;
+                auto min = std::min_element(best.begin(), best.end(),
+                    [] (const auto& p1, const auto& p2) {
+                        return p1 < p2;
                     }
-                    // save to map and remove dublicates
-                    rest[top[0].first] = top[0].second;
-                    top.pop_front();
-                    rest.erase(found);
+                );
+                if (*min < *in_rest)
+                {
+                   best[in_rest.key()] = in_rest.value();
+                   rest[min.key()] = min.value();
+                   best.erase(min);
+                   rest.erase(in_rest);
                 }
             }
             else
             {
-                // save new value to map
-                rest[new_stat.first] = new_stat.second;
+                rest[token] = 1;
             }
         }
     }
@@ -88,8 +59,8 @@ void TextStats::start()
 {
     const auto& start = std::chrono::high_resolution_clock::now();
 
-    top.clear();
     rest.clear();
+    best.clear();
 
     QFile file(QUrl(filename).toLocalFile());
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -115,14 +86,9 @@ void TextStats::start()
         {
             updateFromString(text.toLower());
         }
-        SortedResults results;
-        for(auto &item : top)
-        {
-            results[item.first] = item.second;
-        }
         int percent = (readed*100)/file.size();
-        emit statsUpdated(results, percent);
-        qDebug() << readed << " " << file.size() << " " << percent;
+        emit statsUpdated(best, percent);
+        // qDebug() << readed << " " << file.size() << " " << percent;
     }
     while( !chunk.isEmpty() );
 
@@ -142,10 +108,10 @@ void TextStats::processFile(const QString& filename_) {
 void TextStats::printTop()
 {
     qDebug() << "Print top";
-    for (auto &elem : top)
+    for (auto &elem : best.toStdMap())
     {
         qDebug() << elem.first << ": " << elem.second ;
     }
-    qDebug() << "unique words: " << rest.size() + top.size();
+    qDebug() << "unique words: " << rest.size() + best.size();
 }
 

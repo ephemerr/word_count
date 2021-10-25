@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     engine.load(url);
 
 
-    qRegisterMetaType<SortedResults>("SortedResults");
+    qRegisterMetaType<QMap<QString, int>>("SortedResults");
 
     QObject::connect(&stats, &TextStats::statsUpdated,
             &contextInterface, &QmlContextInterface::onStatsUpdate);

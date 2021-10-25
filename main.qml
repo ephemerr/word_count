@@ -56,7 +56,7 @@ Window {
         ChartView {
             id: chart
             anchors.fill: parent
-            legend.alignment: Qt.AlignBottom
+            legend.visible: false
             antialiasing: true
             BarSeries {
                 id: mySeries

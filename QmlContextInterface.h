@@ -1,7 +1,5 @@
 #pragma once
 
-#include "SortedResults.h"
-
 #include <QObject>
 #include <QMap>
 #include <QDebug>
@@ -19,7 +17,7 @@ public:
    const QList<int> getNumbers() const { return m_stats.values();}
 
 public slots:
-    void onStatsUpdate(const SortedResults& stats, int percent) {
+    void onStatsUpdate(const QMap<QString, int>& stats, int percent) {
         m_stats = stats;
         m_percent = percent;
         emit wordsChanged();
@@ -33,7 +31,7 @@ signals:
     void percentChanged();
     void fileChoosed(const QString& filename);
 private:
-    SortedResults m_stats;
+    QMap<QString, int> m_stats;
     int m_percent = 0;
 };
 

@@ -1,16 +1,9 @@
 #pragma once
 
-#include "SortedResults.h"
-
 #include <QString>
-
-#include <QPair>
-#include <QList>
 #include <QHash>
-#include <QThread>
-#include <QString>
+#include <QObject>
 #include <QMap>
-#include <QMutex>
 
 class TextStats : public QObject {
     Q_OBJECT
@@ -29,13 +22,12 @@ public:
 public slots:
     void start();
 signals:
-    void statsUpdated(const SortedResults, int percent);
+    void statsUpdated(const QMap<QString, int>, int percent);
     void finished();
 
 private:
     QString filename;
-    typedef QPair<QString,int>  word_stat_t;
-    QList<word_stat_t> top;
     QHash<QString, int> rest;
+    QMap<QString, int> best;
 };
 
