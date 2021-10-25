@@ -6,6 +6,8 @@
 #include <QThread>
 #include <QDebug>
 #include <QQmlContext>
+#include <qobject.h>
+#include <qqmlapplicationengine.h>
 
 
 
@@ -15,7 +17,6 @@ int main(int argc, char *argv[])
     QThread thread;
     TextStats stats;
     stats.moveToThread(&thread);
-    QObject::connect(&thread, &QThread::started, &stats, &TextStats::start);
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -47,6 +48,8 @@ int main(int argc, char *argv[])
 
     QObject::connect( &contextInterface, &QmlContextInterface::fileChoosed,
             &stats, &TextStats::processFile);
+
+    QObject::connect( &app, &QCoreApplication::aboutToQuit, &thread, &QThread::quit);
 
     thread.start();
 
