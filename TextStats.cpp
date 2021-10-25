@@ -3,8 +3,17 @@
 #include <QDebug>
 #include <QString>
 #include <QFile>
-#include <QMutexLocker>
-#include <qdebug.h>
+#include <QUrl>
+
+#include <chrono>
+
+auto timeFuncInvocation =
+    [](const auto&& func, auto&&... params) {
+        const auto& start = std::chrono::high_resolution_clock::now();
+        std::forward<decltype(func)>(func)(std::forward<decltype(params)>(params)...);
+        const auto& stop = std::chrono::high_resolution_clock::now();
+        return stop - start;
+     };
 
 void TextStats::updateFromString(const QString& token)
 {
@@ -77,13 +86,16 @@ void TextStats::updateFromString(const QString& token)
 
 void TextStats::start()
 {
+    const auto& start = std::chrono::high_resolution_clock::now();
+
     top.clear();
     rest.clear();
 
-    QFile file(filename);
+    QFile file(QUrl(filename).toLocalFile());
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        qWarning() << "Could not open file.";
+        qWarning() << "Could not open file: " << filename;
+        emit finished();
         return;
     }
     QString text;
@@ -95,6 +107,7 @@ void TextStats::start()
             readed += chunk.size();
         } catch( ... ) {
             qWarning() << "Error reading file.";
+            emit finished();
             return;
         }
         QTextStream stream(&chunk);
@@ -112,11 +125,18 @@ void TextStats::start()
         qDebug() << readed << " " << file.size() << " " << percent;
     }
     while( !chunk.isEmpty() );
+
+    const auto& stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double, std::milli> du = stop - start;;
+    qDebug() << "time spent: " << du.count();
+
+    emit finished();
 }
 
-void TextStats::setFileName(const QString& filename_)
-{
+void TextStats::processFile(const QString& filename_) {
     this->filename = filename_;
+    start();
 }
 
 void TextStats::printTop()

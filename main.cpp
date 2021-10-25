@@ -7,25 +7,13 @@
 #include <QDebug>
 #include <QQmlContext>
 
-#include <chrono>
 
-auto timeFuncInvocation =
-    [](const auto&& func, auto&&... params) {
-        // get time before function invocation
-        const auto& start = std::chrono::high_resolution_clock::now();
-        // function invocation using perfect forwarding
-        std::forward<decltype(func)>(func)(std::forward<decltype(params)>(params)...);
-        // get time after function invocation
-        const auto& stop = std::chrono::high_resolution_clock::now();
-        return stop - start;
-     };
 
 
 int main(int argc, char *argv[])
 {
     QThread thread;
     TextStats stats;
-    stats.setFileName("file3.txt");
     stats.moveToThread(&thread);
     QObject::connect(&thread, &QThread::started, &stats, &TextStats::start);
 
@@ -53,6 +41,12 @@ int main(int argc, char *argv[])
 
     QObject::connect(&stats, &TextStats::statsUpdated,
             &contextInterface, &QmlContextInterface::onStatsUpdate);
+
+    QObject::connect(&stats, &TextStats::finished,
+            &contextInterface, &QmlContextInterface::finished);
+
+    QObject::connect( &contextInterface, &QmlContextInterface::fileChoosed,
+            &stats, &TextStats::processFile);
 
     thread.start();
 

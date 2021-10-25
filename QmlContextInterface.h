@@ -11,7 +11,6 @@ class QmlContextInterface: public QObject {
 public:
     QmlContextInterface(QObject *const parent = 0) {m_stats = {{"none", 0}};};
     ~QmlContextInterface() {};
-    Q_PROPERTY(SortedResults stats MEMBER m_stats NOTIFY statsChanged)
     Q_PROPERTY(int percent MEMBER m_percent NOTIFY percentChanged)
     Q_PROPERTY(QStringList words READ getWords NOTIFY wordsChanged)
     Q_PROPERTY(QList<int> numbers READ getNumbers NOTIFY numbersChanged)
@@ -28,10 +27,11 @@ public slots:
         emit percentChanged();
     }
 signals:
+    void finished();
     void wordsChanged();
     void numbersChanged();
-    void statsChanged();
     void percentChanged();
+    void fileChoosed(const QString& filename);
 private:
     SortedResults m_stats;
     int m_percent = 0;

@@ -23,13 +23,14 @@ public:
     ~TextStats() {};
 
     void updateFromString(const QString& text);
-    void setFileName(const QString& filename);
+    void processFile(const QString& filename);
     void printTop();
 
 public slots:
     void start();
 signals:
     void statsUpdated(const SortedResults, int percent);
+    void finished();
 
 private:
     QString filename;
