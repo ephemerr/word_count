@@ -16,17 +16,16 @@ public:
     ~TextStats() {};
 
     void updateFromString(const QString& text);
-    void processFile(const QString& filename);
     void printTop();
 
 public slots:
-    void start();
+    void processFile(const QString& filename);
+
 signals:
     void statsUpdated(const QMap<QString, int>, int percent);
     void finished();
 
 private:
-    QString filename;
     QHash<QString, int> rest;
     QMap<QString, int> best;
 };

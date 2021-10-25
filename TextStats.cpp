@@ -7,14 +7,6 @@
 
 #include <chrono>
 
-auto timeFuncInvocation =
-    [](const auto&& func, auto&&... params) {
-        const auto& start = std::chrono::high_resolution_clock::now();
-        std::forward<decltype(func)>(func)(std::forward<decltype(params)>(params)...);
-        const auto& stop = std::chrono::high_resolution_clock::now();
-        return stop - start;
-     };
-
 void TextStats::updateFromString(const QString& token)
 {
     auto in_best = best.find(token);
@@ -55,8 +47,8 @@ void TextStats::updateFromString(const QString& token)
     }
 }
 
-void TextStats::start()
-{
+void TextStats::processFile(const QString& filename) {
+
     const auto& start = std::chrono::high_resolution_clock::now();
 
     rest.clear();
@@ -88,7 +80,6 @@ void TextStats::start()
         }
         int percent = (readed*100)/file.size();
         emit statsUpdated(best, percent);
-        // qDebug() << readed << " " << file.size() << " " << percent;
     }
     while( !chunk.isEmpty() );
 
@@ -98,11 +89,6 @@ void TextStats::start()
     qDebug() << "time spent: " << du.count();
 
     emit finished();
-}
-
-void TextStats::processFile(const QString& filename_) {
-    this->filename = filename_;
-    start();
 }
 
 void TextStats::printTop()
